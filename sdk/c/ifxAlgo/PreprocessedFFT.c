@@ -121,6 +121,13 @@ ifx_PPFFT_t *ifx_ppfft_create(const ifx_PPFFT_Config_t *config)
 
     ifx_window_init(&config->window_config, h->fft_window);
 
+    printf("ifx_ppfft_create   ifx_window_init fft_window   type:%d\r\n", config->window_config.type);
+    for (uint32_t ii = 0; ii < IFX_VEC_LEN(h->fft_window); ii++)
+    {
+        printf("%10.6f  ", IFX_VEC_AT(h->fft_window, ii));
+    }
+    printf("\r\n\n");
+
     h->window_config = config->window_config;
     h->mean_removal_enabled = config->mean_removal_enabled;
 
@@ -130,13 +137,25 @@ ifx_PPFFT_t *ifx_ppfft_create(const ifx_PPFFT_Config_t *config)
 
         ifx_vec_scale_r(h->fft_window, 1.0f / sum, h->fft_window);
     }
-
+    printf("ifx_ppfft_create   ifx_vec_scale_r is_normalized_window :%d  fft_window\r\n", config->is_normalized_window);
+    for (uint32_t ii = 0; ii < IFX_VEC_LEN(h->fft_window); ii++)
+    {
+        printf("%10.6f  ", IFX_VEC_AT(h->fft_window, ii));
+    }
+    printf("\r\n\n");
     // Moved out of window_init() as scaling got cancelled if window normalization is performed afterwards.
 
     if (config->window_config.scale != 0 && config->window_config.scale != 1)
     {
         ifx_vec_scale_r(h->fft_window, config->window_config.scale, h->fft_window);
     }
+
+    printf("ifx_ppfft_create   ifx_vec_scale_r window_config.scale:%f fft_window\r\n", config->window_config.scale);
+    for (uint32_t ii = 0; ii < IFX_VEC_LEN(h->fft_window); ii++)
+    {
+        printf("%10.6f  ", IFX_VEC_AT(h->fft_window, ii));
+    }
+    printf("\r\n\n");
 
     return h;
 }
@@ -190,24 +209,34 @@ void ifx_ppfft_run_rc(ifx_PPFFT_t *handle,
         printf("\r\n\n");
     }
 
-    // if (handle->mean_removal_enabled != 0)
-    // {
-    //     ifx_Float_t mean = ifx_vec_mean_r(fft_in);
+    if (handle->mean_removal_enabled != 0)
+    {
+        ifx_Float_t mean = ifx_vec_mean_r(fft_in);
 
-    //     ifx_vec_sub_rs(fft_in, mean, handle->pp_result_r);
-    //     if (abc == 1)
-    //     {
-    //         printf("ifx_ppfft_run_rc    meam:%10.6f\r\n", mean);
-    //         for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->pp_result_r); ii++)
-    //         {
-    //             printf("%10.6f  ", IFX_VEC_AT(handle->pp_result_r, ii));
-    //         }
-    //         printf("\r\n\n");
-    //     }
+        ifx_vec_sub_rs(fft_in, mean, handle->pp_result_r);
+        if (abc == 1)
+        {
+            printf("ifx_ppfft_run_rc    meam:%10.6f\r\n", mean);
+            for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->pp_result_r); ii++)
+            {
+                printf("%10.6f  ", IFX_VEC_AT(handle->pp_result_r, ii));
+            }
+            printf("\r\n\n");
+        }
 
-    //     ifx_vec_mul_r(handle->pp_result_r, handle->fft_window, handle->pp_result_r);
-    // }
-    // else
+        if (abc == 1)
+        {
+            printf("ifx_ppfft_run_rc   fft_window\r\n");
+            for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->fft_window); ii++)
+            {
+                printf("%10.6f  ", IFX_VEC_AT(handle->fft_window, ii));
+            }
+            printf("\r\n\n");
+        }
+
+        ifx_vec_mul_r(handle->pp_result_r, handle->fft_window, handle->pp_result_r);
+    }
+    else
     {
         ifx_vec_mul_r(fft_in, handle->fft_window, handle->pp_result_r);
     }

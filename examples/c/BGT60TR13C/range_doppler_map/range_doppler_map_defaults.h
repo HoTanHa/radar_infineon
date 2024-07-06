@@ -70,7 +70,8 @@
 
 #define IFX_MAXIMUM_SPEED_MPS (2.5f) // maximum speed in m/s that can be detected
 
-#define IFX_ALPHA_MTI_FILTER (0.3f) // alpha parameter for MTI filter
+#define IFX_ALPHA_MTI_FILTER (0.5f) // alpha parameter for MTI filter
+#define IFX_ALPHA_MTI_FILTER1 (0.3f) // alpha parameter for MTI filter
 
 #define IFX_SPECT_THRESHOLD (1e-6f)
 

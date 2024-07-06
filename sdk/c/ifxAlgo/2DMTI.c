@@ -185,11 +185,14 @@ void ifx_2dmti_run_r(ifx_2DMTI_R_t *handle,
     const ifx_Float_t alpha = handle->alpha_MTI_filter;
     ifx_Matrix_R_t *history = handle->filter_history_r;
 
-    printf("ifx_2dmti_run_r rows:%u  cols:%u  alpha:%10.6f\r\n", rows, cols, alpha);
     // output_n := input_n - history_n
     // history_n := alpha*input_n + (1-alpha)*history_{n-1}
     static int abc = 0;
     abc++;
+    if (abc == 1)
+    {
+        printf("ifx_2dmti_run_r rows:%u  cols:%u  alpha:%10.6f\r\n", rows, cols, alpha);
+    }
 
     for (uint32_t r = 0; r < rows; r++)
     {
@@ -200,9 +203,9 @@ void ifx_2dmti_run_r(ifx_2DMTI_R_t *handle,
             mAt(output, r, c) = input_rc - history_rc;
             mAt(history, r, c) = alpha * input_rc + (1 - alpha) * history_rc;
             if (r == 0 && abc == 1)
-                printf("(%10.6f %10.6f) ", input_rc, history_rc);
+                printf("%10.6f**%10.6f  ", input_rc, history_rc);
         }
-        if (r == 0)
+        if (r == 0 && abc == 1)
             printf("\r\n\n");
     }
 }

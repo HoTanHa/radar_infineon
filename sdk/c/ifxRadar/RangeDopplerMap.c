@@ -268,9 +268,13 @@ void ifx_rdm_run_rc(ifx_RDM_t *handle,
 
     uint32_t rng_fft_out_size = mRows(handle->rdm_matrix);
     uint32_t dopp_fft_out_size = mCols(handle->rdm_matrix);
-
-    printf("ifx_rdm_run_rc\t samples_per_chirp:%u   num_of_chirps:%u  rng_fft:%u   dopp_fft:%u\r\n",
-           samples_per_chirp, num_of_chirps, rng_fft_out_size, dopp_fft_out_size);
+    static int abc = 0;
+    abc++;
+    if (abc == 1)
+    {
+        printf("ifx_rdm_run_rc\t samples_per_chirp:%u   num_of_chirps:%u  rng_fft:%u   dopp_fft:%u\r\n",
+               samples_per_chirp, num_of_chirps, rng_fft_out_size, dopp_fft_out_size);
+    }
 
     ifx_Vector_C_t fft_result;
     ifx_Vector_R_t range_fft_inp;
@@ -279,8 +283,6 @@ void ifx_rdm_run_rc(ifx_RDM_t *handle,
     {
         num_of_chirps = dopp_fft_out_size;
     }
-    static int abc = 0;
-    abc++;
 
     for (uint32_t i = 0; i < num_of_chirps; ++i)
     {
@@ -300,9 +302,9 @@ void ifx_rdm_run_rc(ifx_RDM_t *handle,
 
         ifx_ppfft_run_rc(handle->range_ppfft_handle, &range_fft_inp, &fft_result);
 
-        if (abc == 1 && i == 0)
+        if (abc == 1 && (i == 0 || i == 1))
         {
-            printf("ifx_rdm_run_rc\t ifx_Vector_C_t fft_result\r\n");
+            printf("ifx_rdm_run_rc\t ifx_Vector_C_t fft_result   ....row=%u\r\n", i);
             for (uint32_t ii = 0; ii < IFX_VEC_LEN(&fft_result); ii++)
             {
                 printf("(%10.6f %10.6f) ",

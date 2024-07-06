@@ -7,3 +7,4 @@ sdk/matlab
 sdk/py
 examples/matlab
 examples/py
+lib*.a
