@@ -1,0 +1,2 @@
+/usr/bin/ar qc libBGT60ATR24C_common.a  CMakeFiles/BGT60ATR24C_common.dir/common.c.o CMakeFiles/BGT60ATR24C_common.dir/json.cpp.o CMakeFiles/BGT60ATR24C_common.dir/time_formatter.c.o CMakeFiles/BGT60ATR24C_common.dir/util.c.o
+/usr/bin/ranlib libBGT60ATR24C_common.a

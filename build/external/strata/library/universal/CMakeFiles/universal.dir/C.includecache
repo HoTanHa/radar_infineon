@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/data_definitions.h
+cstdint
+-
+stdbool.h
+-
+stdint.h
+-
+
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/error_definitions.h
+
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/error_strings.c
+error_strings.h
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/error_strings.h
+data_definitions.h
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/data_definitions.h
+error_definitions.h
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/error_definitions.h
+protocol/protocol_definitions.h
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/protocol/protocol_definitions.h
+
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/error_strings.h
+
+/home/htha/Infineon/radar_sdk/external/strata/library/universal/protocol/protocol_definitions.h
+

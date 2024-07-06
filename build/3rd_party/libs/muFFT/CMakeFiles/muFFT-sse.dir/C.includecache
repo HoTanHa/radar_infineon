@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/mufft.h
+stddef.h
+-
+
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/mufft_internal.h
+mufft.h
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/mufft.h
+math.h
+-
+
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/x86/kernel.h
+../mufft_internal.h
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/mufft_internal.h
+immintrin.h
+-
+pmmintrin.h
+-
+xmmintrin.h
+-
+
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/x86/kernel.sse.c
+kernel.h
+/home/htha/Infineon/radar_sdk/3rd_party/libs/muFFT/x86/kernel.h
+

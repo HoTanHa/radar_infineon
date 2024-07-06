@@ -1,0 +1,2 @@
+/usr/bin/ar qc libBGT60UTR11AIP_common.a  CMakeFiles/BGT60UTR11AIP_common.dir/common.c.o CMakeFiles/BGT60UTR11AIP_common.dir/json.cpp.o CMakeFiles/BGT60UTR11AIP_common.dir/time_formatter.c.o CMakeFiles/BGT60UTR11AIP_common.dir/util.c.o
+/usr/bin/ranlib libBGT60UTR11AIP_common.a

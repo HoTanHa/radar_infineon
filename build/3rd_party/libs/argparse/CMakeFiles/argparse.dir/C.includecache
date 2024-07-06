@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/htha/Infineon/radar_sdk/3rd_party/libs/argparse/argparse.c
+stdbool.h
+-
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+assert.h
+-
+errno.h
+-
+argparse.h
+/home/htha/Infineon/radar_sdk/3rd_party/libs/argparse/argparse.h
+
+/home/htha/Infineon/radar_sdk/3rd_party/libs/argparse/argparse.h
+stdint.h
+-
+stdio.h
+-
+

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmuFFT-avx.a  CMakeFiles/muFFT-avx.dir/x86/kernel.avx.c.o
+/usr/bin/ranlib libmuFFT-avx.a

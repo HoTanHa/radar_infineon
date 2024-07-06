@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/htha/Infineon/radar_sdk/external/strata/library/Definitions.hpp
+
+/home/htha/Infineon/radar_sdk/external/strata/library/Library.cpp
+Library.hpp
+/home/htha/Infineon/radar_sdk/external/strata/library/Library.hpp
+
+/home/htha/Infineon/radar_sdk/external/strata/library/Library.hpp
+Definitions.hpp
+/home/htha/Infineon/radar_sdk/external/strata/library/Definitions.hpp
+cstdint
+-
+string
+-
+
