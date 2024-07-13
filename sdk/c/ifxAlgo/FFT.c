@@ -236,7 +236,7 @@ void ifx_fft_run_rc(ifx_FFT_t *handle, const ifx_Vector_R_t *input, ifx_Vector_C
     abc++;
     if (abc == 1)
     {
-        printf("ifx_fft_run_rc    before zerro\r\n");
+        printf("ifx_fft_run_rc    before zerro  ..len:%u\r\n", vLen(input));
         for (uint32_t ii = 0; ii < vLen(input); ii++)
         {
             printf("%10.6f  ", in[ii]);
@@ -252,7 +252,7 @@ void ifx_fft_run_rc(ifx_FFT_t *handle, const ifx_Vector_R_t *input, ifx_Vector_C
 
     if (abc == 1)
     {
-        printf("ifx_fft_run_rc    after zerro\r\n");
+        printf("ifx_fft_run_rc    after zerro  ..len:%u\r\n", N);
         for (uint32_t ii = 0; ii < N; ii++)
         {
             printf("%10.6f  ", in[ii]);
@@ -268,7 +268,7 @@ void ifx_fft_run_rc(ifx_FFT_t *handle, const ifx_Vector_R_t *input, ifx_Vector_C
     mufft_execute_plan_1d(handle->plan_r2c, out, in);
     if (abc == 1)
     {
-        printf("ifx_fft_run_rc    after compute FFT\r\n");
+        printf("ifx_fft_run_rc    after compute FFT mufft_execute_plan_1d\r\n");
         for (uint32_t ii = 0; ii < N; ii++)
         {
             printf("(%10.6f %10.6f) ", out[ii].data[0], out[ii].data[1]);

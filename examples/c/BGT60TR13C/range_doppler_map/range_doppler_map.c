@@ -359,7 +359,7 @@ ifx_Error_t rdm_process(rdm_t *rdm_context, ifx_Cube_R_t *frame)
 
     static int count = 0;
     count++;
-    if (count > 100)
+    if (count > 50)
     {
         kill(getpid(), 2);
     }

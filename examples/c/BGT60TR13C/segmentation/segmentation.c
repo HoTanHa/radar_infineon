@@ -27,7 +27,6 @@
 ** ===========================================================================
 */
 
-
 /**
  * @file   segmentation.c
  *
@@ -56,10 +55,10 @@
 ==============================================================================
 */
 
-#define MAX_NUM_TRACKS        5  // currently max 5 tracks
-#define NUM_SEGMENTS          6  // currently 6 segments
-#define NUM_ENTRIES_PER_TRACK 4  // four entries per track: id, range, angle, speed
-#define NUM_RX_ANTENNAS       2  // currently only works with two RX antennas activated
+#define MAX_NUM_TRACKS 5        // currently max 5 tracks
+#define NUM_SEGMENTS 6          // currently 6 segments
+#define NUM_ENTRIES_PER_TRACK 4 // four entries per track: id, range, angle, speed
+#define NUM_RX_ANTENNAS 2       // currently only works with two RX antennas activated
 
 /*
 ==============================================================================
@@ -69,10 +68,10 @@
 
 typedef struct
 {
-    ifx_Segmentation_t* segmentation_handle;
+    ifx_Segmentation_t *segmentation_handle;
     ifx_Segmentation_Config_t segmentation_config;
-    ifx_Vector_R_t* segments;
-    ifx_Matrix_R_t* tracks;
+    ifx_Vector_R_t *segments;
+    ifx_Matrix_R_t *tracks;
 } segmentation_t;
 
 /*
@@ -87,7 +86,7 @@ typedef struct
  * @param frame         processed frame
  * @param orientation   orientation information
  */
-static ifx_Cube_R_t frame_view(const ifx_Cube_R_t* frame, ifx_Orientation_t orientation)
+static ifx_Cube_R_t frame_view(const ifx_Cube_R_t *frame, ifx_Orientation_t orientation)
 {
     ifx_Cube_R_t view = {0};
 
@@ -104,7 +103,7 @@ static ifx_Cube_R_t frame_view(const ifx_Cube_R_t* frame, ifx_Orientation_t orie
         IFX_MDA_VIEW_R(&view, frame, IFX_MDA_SLICE(1, 3, 1), IFX_MDA_SLICE_FULL(), IFX_MDA_SLICE_FULL());
         return view;
     }
-    else  // (orientation == IFX_ORIENTATION_LANDSCAPE)
+    else // (orientation == IFX_ORIENTATION_LANDSCAPE)
     {
         // RX1 and RX3, we skip row 1 (RX2)
         IFX_MDA_VIEW_R(&view, frame, IFX_MDA_SLICE(0, 3, 2), IFX_MDA_SLICE_FULL(), IFX_MDA_SLICE_FULL());
@@ -120,7 +119,7 @@ static ifx_Cube_R_t frame_view(const ifx_Cube_R_t* frame, ifx_Orientation_t orie
  * @param segments          information about segments in a vector
  * @param tracks            information about tracks in a matrix
  */
-static void process_segmentation_result(ifx_Vector_R_t* segments, ifx_Matrix_R_t* tracks)
+static void process_segmentation_result(ifx_Vector_R_t *segments, ifx_Matrix_R_t *tracks)
 {
     IFX_ERR_BRK_NULL(segments);
     IFX_ERR_BRK_NULL(tracks);
@@ -157,7 +156,7 @@ static void process_segmentation_result(ifx_Vector_R_t* segments, ifx_Matrix_R_t
  *
  * @param ctx               context of the application
  */
-ifx_Error_t segmentation_init(segmentation_t* ctx)
+ifx_Error_t segmentation_init(segmentation_t *ctx)
 {
     return IFX_OK;
 }
@@ -173,9 +172,9 @@ ifx_Error_t segmentation_init(segmentation_t* ctx)
  * @param json              json handle with configuration
  * @param dev_config        device configuration handle
  */
-ifx_Error_t segmentation_config(segmentation_t* ctx, ifx_Avian_Device_t* device, ifx_json_t* json, ifx_Avian_Config_t* dev_config)
+ifx_Error_t segmentation_config(segmentation_t *ctx, ifx_Avian_Device_t *device, ifx_json_t *json, ifx_Avian_Config_t *dev_config)
 {
-    const ifx_Radar_Sensor_Info_t* sensor_info = ifx_avian_get_sensor_information(device);
+    const ifx_Radar_Sensor_Info_t *sensor_info = ifx_avian_get_sensor_information(device);
 
     if (sensor_info->num_rx_antennas < 3)
     {
@@ -224,7 +223,7 @@ ifx_Error_t segmentation_config(segmentation_t* ctx, ifx_Avian_Device_t* device,
             return IFX_ERROR_APP;
         }
     }
-    else  // IFX_ORIENTATION_PORTRAIT
+    else // IFX_ORIENTATION_PORTRAIT
     {
         // requires RX2 and RX3 (1<<1 | 1<<2 = 6)
         if ((rx_mask & 6) != 6)
@@ -239,6 +238,22 @@ ifx_Error_t segmentation_config(segmentation_t* ctx, ifx_Avian_Device_t* device,
     ctx->tracks = ifx_mat_create_r(MAX_NUM_TRACKS, NUM_ENTRIES_PER_TRACK);
     ctx->segments = ifx_vec_create_r(NUM_SEGMENTS);
 
+    printf("Device configuration:\n");
+    printf("sample_rate_Hz:          %u\n", dev_config->sample_rate_Hz);
+    printf("rx_mask:                 %u\n", dev_config->rx_mask);
+    printf("tx_mask:                 %u\n", dev_config->tx_mask);
+    printf("tx_power_level:          %u\n", dev_config->tx_power_level);
+    printf("if_gain_dB:              %u\n", dev_config->if_gain_dB);
+    printf("start_frequency_Hz:      %lu\n", dev_config->start_frequency_Hz);
+    printf("end_frequency_Hz:        %lu\n", dev_config->end_frequency_Hz);
+    printf("num_samples_per_chirp:   %u\n", dev_config->num_samples_per_chirp);
+    printf("num_chirps_per_frame:    %u\n", dev_config->num_chirps_per_frame);
+    printf("chirp_repetition_time_s: %g\n", dev_config->chirp_repetition_time_s);
+    printf("frame_repetition_time_s: %g\n", dev_config->frame_repetition_time_s);
+    printf("hp_cutoff_Hz:            %u\n", dev_config->hp_cutoff_Hz);
+    printf("aaf_cutoff_Hz:           %u\n", dev_config->aaf_cutoff_Hz);
+    printf("\n");
+
     return ifx_error_get();
 }
 
@@ -249,7 +264,7 @@ ifx_Error_t segmentation_config(segmentation_t* ctx, ifx_Avian_Device_t* device,
  *
  * @param ctx           context of the application
  */
-ifx_Error_t segmentation_cleanup(segmentation_t* ctx)
+ifx_Error_t segmentation_cleanup(segmentation_t *ctx)
 {
     ifx_vec_destroy_r(ctx->segments);
     ifx_mat_destroy_r(ctx->tracks);
@@ -266,12 +281,33 @@ ifx_Error_t segmentation_cleanup(segmentation_t* ctx)
  * @param ctx           context of the application
  * @param frame         collected frame
  */
-ifx_Error_t segmentation_process(segmentation_t* ctx, ifx_Cube_R_t* frame)
+ifx_Error_t segmentation_process(segmentation_t *ctx, ifx_Cube_R_t *frame)
 {
     const ifx_Cube_R_t view = frame_view(frame, ctx->segmentation_config.orientation);
 
     ifx_segmentation_run(ctx->segmentation_handle, &view, ctx->segments, ctx->tracks);
     process_segmentation_result(ctx->segments, ctx->tracks);
+
+    static int count = 0;
+    count++;
+    if (count == 1)
+    {
+        ifx_Vector_R_t samples = {0};
+        printf("\n========== Frame: =========== IFX_MAT_ROWS(frame):%u\n", IFX_MAT_ROWS(frame));
+
+        for (uint32_t ant = 0; ant < IFX_MAT_ROWS(&view); ant++)
+        {
+            // Fetch samples for single antenna from the antenna matrix
+            ifx_mat_get_rowview_r(frame, ant, &samples);
+
+            printf("\n========== Rx Antenna: %d =========== IFX_VEC_LEN(&samples):%u\n", ant, IFX_VEC_LEN(&samples));
+            for (uint32_t i = 0; i < IFX_VEC_LEN(&samples); i++)
+            {
+                printf("%10.6f ", IFX_VEC_AT(&samples, i));
+            }
+            printf("\n");
+        }
+    }
     return ifx_error_get();
 }
 
@@ -281,7 +317,7 @@ ifx_Error_t segmentation_process(segmentation_t* ctx, ifx_Cube_R_t* frame)
 ==============================================================================
  */
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     app_t s_segmentation = {0};
     segmentation_t segmentation_context = {0};
@@ -294,8 +330,8 @@ int main(int argc, char* argv[])
     }
 
     // function Description
-    static const char* app_description = "Segmentation detection";
-    static const char* app_epilog = "\n"
+    static const char *app_description = "Segmentation detection";
+    static const char *app_epilog = "\n"
                                     "Output\n"
                                     "    The output format is given in JSON format. elapsed_time and frame_number\n"
                                     "    denote the time passed since starting the application and the current frame\n"
@@ -309,10 +345,10 @@ int main(int argc, char* argv[])
     s_segmentation.app_description = app_description;
     s_segmentation.app_epilog = app_epilog;
 
-    s_segmentation.app_init = (void*)segmentation_init;
-    s_segmentation.app_config = (void*)segmentation_config;
-    s_segmentation.app_process = (void*)segmentation_process;
-    s_segmentation.app_cleanup = (void*)segmentation_cleanup;
+    s_segmentation.app_init = (void *)segmentation_init;
+    s_segmentation.app_config = (void *)segmentation_config;
+    s_segmentation.app_process = (void *)segmentation_process;
+    s_segmentation.app_cleanup = (void *)segmentation_cleanup;
 
     s_segmentation.default_metrics = NULL;
     s_segmentation.default_config = &device_config;

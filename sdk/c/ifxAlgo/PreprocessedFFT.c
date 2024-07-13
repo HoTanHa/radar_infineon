@@ -201,7 +201,7 @@ void ifx_ppfft_run_rc(ifx_PPFFT_t *handle,
     }
     if (abc == 1)
     {
-        printf("ifx_ppfft_run_rc    \r\n");
+        printf("ifx_ppfft_run_rc    start of function:...  input\r\n");
         for (uint32_t ii = 0; ii < IFX_VEC_LEN(fft_in); ii++)
         {
             printf("%10.6f  ", IFX_VEC_AT(fft_in, ii));
@@ -216,7 +216,7 @@ void ifx_ppfft_run_rc(ifx_PPFFT_t *handle,
         ifx_vec_sub_rs(fft_in, mean, handle->pp_result_r);
         if (abc == 1)
         {
-            printf("ifx_ppfft_run_rc    meam:%10.6f\r\n", mean);
+            printf("ifx_ppfft_run_rc    after ifx_vec_sub_rs   val[i]-mean ..meam=sum/len=%10.6f\r\n", mean);
             for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->pp_result_r); ii++)
             {
                 printf("%10.6f  ", IFX_VEC_AT(handle->pp_result_r, ii));
@@ -235,6 +235,16 @@ void ifx_ppfft_run_rc(ifx_PPFFT_t *handle,
         }
 
         ifx_vec_mul_r(handle->pp_result_r, handle->fft_window, handle->pp_result_r);
+
+        if (abc == 1)
+        {
+            printf("ifx_ppfft_run_rc    after ifx_vec_mul_r  val[i]*window[i] \r\n");
+            for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->pp_result_r); ii++)
+            {
+                printf("%10.6f  ", IFX_VEC_AT(handle->pp_result_r, ii));
+            }
+            printf("\r\n\n");
+        }
     }
     else
     {
@@ -254,6 +264,9 @@ void ifx_ppfft_run_c(ifx_PPFFT_t *handle,
     IFX_VEC_BRK_VALID(input);
     IFX_VEC_BRK_VALID(output);
 
+    static int abc = 0;
+    abc++;
+
     ifx_Vector_C_t *fft_in = (ifx_Vector_C_t *)input;
 
     if (vLen(input) > vLen(handle->pp_result_c)) //  case: Input data is larger than FFT size
@@ -262,14 +275,55 @@ void ifx_ppfft_run_c(ifx_PPFFT_t *handle,
 
         fft_in = handle->pp_result_c;
     }
-
+    if (abc == 1 )
+    {
+        printf("ifx_ppfft_run_c\t   start fft  \r\n");
+        for (uint32_t ii = 0; ii < IFX_VEC_LEN(fft_in); ii++)
+        {
+            ifx_Complex_t value = IFX_VEC_AT(fft_in, ii);
+            printf("(%10.6f %10.6f) ", value.data[0], value.data[1]);
+        }
+        printf("\r\n\n");
+    }
     if (handle->mean_removal_enabled != 0)
     {
         ifx_Complex_t mean = ifx_vec_mean_c(fft_in);
 
         ifx_vec_sub_cs(fft_in, mean, handle->pp_result_c);
+        if (abc == 1)
+        {
+            printf("ifx_ppfft_run_c    after ifx_vec_sub_cs   val[i]-mean ..meam=sum/len=%10.6f %10.6f\r\n", 
+            mean.data[0], mean.data[1]);
+            for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->pp_result_c); ii++)
+            {
+                ifx_Complex_t value = IFX_VEC_AT(handle->pp_result_c, ii);
+                printf("(%10.6f %10.6f) ",value.data[0],value.data[1]);
+            }
+            printf("\r\n\n");
+        }
+
+        if (abc == 1)
+        {
+            printf("ifx_ppfft_run_c   fft_window\r\n");
+            for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->fft_window); ii++)
+            {
+                printf("%10.6f  ", IFX_VEC_AT(handle->fft_window, ii));
+            }
+            printf("\r\n\n");
+        }
 
         ifx_vec_mul_cr(handle->pp_result_c, handle->fft_window, handle->pp_result_c);
+
+        if (abc == 1)
+        {
+            printf("ifx_ppfft_run_c    after ifx_vec_mul_cr  val.r=(ar * br - ai * bi)  val.i=(ar * bi + ai * br)\r\n");
+            for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->pp_result_c); ii++)
+            {
+                ifx_Complex_t value = IFX_VEC_AT(handle->pp_result_c, ii);
+                printf("(%10.6f %10.6f) ", value.data[0], value.data[1]);
+            }
+            printf("\r\n\n");
+        }
     }
     else
     {

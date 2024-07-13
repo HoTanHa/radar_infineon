@@ -101,21 +101,21 @@
  * @param frame             frame handle to fetch
  * @param frame_count       count of frames to fetch and process
  */
-void process_frame(ifx_Matrix_R_t* frame, uint32_t frame_count)
+void process_frame(ifx_Matrix_R_t *frame, uint32_t frame_count)
 {
     ifx_Vector_R_t samples = {0};
 
-    printf("\n========== Frame: %d ===========\n", frame_count);
+    printf("\n========== Frame: %d =========== IFX_MAT_ROWS(frame):%u\n", frame_count, IFX_MAT_ROWS(frame));
 
     for (uint32_t ant = 0; ant < IFX_MAT_ROWS(frame); ant++)
     {
         // Fetch samples for single antenna from the antenna matrix
         ifx_mat_get_rowview_r(frame, ant, &samples);
 
-        printf("\n========== Rx Antenna: %d ===========\n", ant);
+        printf("\n========== Rx Antenna: %d =========== IFX_VEC_LEN(&samples):%u\n", ant, IFX_VEC_LEN(&samples));
         for (uint32_t i = 0; i < IFX_VEC_LEN(&samples); i++)
         {
-            printf("%.4f ", IFX_VEC_AT(&samples, i));
+            printf("%10.6f ", IFX_VEC_AT(&samples, i));
         }
         printf("\n");
     }
@@ -127,7 +127,7 @@ void process_frame(ifx_Matrix_R_t* frame, uint32_t frame_count)
 ==============================================================================
  */
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     ifx_Cw_Baseband_Config_t baseband_config;
     ifx_Cw_Adc_Config_t adc_config;
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 
     printf("Radar SDK Version: %s\n", ifx_sdk_get_version_string_full());
     /* Open the device */
-    ifx_Device_Cw_t* cw_device = ifx_cw_create();
+    ifx_Device_Cw_t *cw_device = ifx_cw_create();
 
     ifx_Error_t error;
     if ((error = ifx_error_get()) != IFX_OK)
@@ -198,13 +198,13 @@ int main(int argc, char** argv)
 
 
     /* ADC configurations */
-    adc_config.sample_and_hold_time_ns = 50;   // 50ns
-    adc_config.oversampling_factor = 2;        // IFX_ADC_OVERSAMPLING_2x
-    adc_config.additional_subconversions = 3;  // IFX_ADC_3_SUBCONVERSIONS
+    adc_config.sample_and_hold_time_ns = 50;  // 50ns
+    adc_config.oversampling_factor = 2;       // IFX_ADC_OVERSAMPLING_2x
+    adc_config.additional_subconversions = 3; // IFX_ADC_3_SUBCONVERSIONS
     ifx_cw_set_adc_config(cw_device, &adc_config);
 
-    const ifx_Cw_Adc_Config_t* curr_adc_config = ifx_cw_get_adc_config(cw_device);
-    const ifx_Radar_Sensor_Info_t* sensor_info = ifx_cw_get_sensor_information(cw_device);
+    const ifx_Cw_Adc_Config_t *curr_adc_config = ifx_cw_get_adc_config(cw_device);
+    const ifx_Radar_Sensor_Info_t *sensor_info = ifx_cw_get_sensor_information(cw_device);
 
     printf("\n************* ADC configurations \n");
     printf(" Lower Limit of Sample Rate (Hz): %5.3e\n", sensor_info->min_adc_sampling_rate);
@@ -226,7 +226,7 @@ int main(int argc, char** argv)
 
     /* Overwrite CW defaults */
     ifx_cw_start_signal(cw_device);
-    ifx_Matrix_R_t* frame = NULL;
+    ifx_Matrix_R_t *frame = NULL;
     float temperature = 0;
 
     time_t start_time;
@@ -252,15 +252,37 @@ int main(int argc, char** argv)
         {
             if ('q' == getchar())
             {
-                ifx_cw_destroy(cw_device);  // CW controller will be destroyed within device handle
-                ifx_mat_destroy_r(frame);   // explicitly destroy CW frame, otherwise a memory leak occurs
+                ifx_cw_destroy(cw_device); // CW controller will be destroyed within device handle
+                ifx_mat_destroy_r(frame);  // explicitly destroy CW frame, otherwise a memory leak occurs
                 cw_device = NULL;
                 exit(0);
             }
         }
+        for (int frame_number = 0; frame_number < NUM_FETCHED_FRAMES; frame_number++)
+        {
+            /* Get the time-domain data for the next frame. The function will block
+             * until the full frame is available and copy the data into the frame
+             * handle.
+             * This function also creates a frame structure for time domain data
+             * acquisition, if not created already. It is the responsibility of
+             * the caller to free the returned frame in this scope.
+             */
+            frame = ifx_cw_capture_frame(cw_device, frame);
+            if ((error = ifx_error_get()) != IFX_OK)
+            {
+                fprintf(stderr, "Failed to get next frame: %s\n", ifx_error_to_string(error));
+                ifx_cw_destroy(cw_device); // CW controller will be destroyed within device handle
+                ifx_mat_destroy_r(frame);  // explicitly destroy CW frame, otherwise a memory leak occurs
+                cw_device = NULL;
+                exit(0);
+            }
+
+            /* Process the frame. */
+            process_frame(frame, frame_number);
+        }
     }
 
-    ifx_cw_destroy(cw_device);  // CW controller will be destroyed within device handle
-    ifx_mat_destroy_r(frame);   // explicitly destroy CW frame, otherwise a memory leak occurs
+    ifx_cw_destroy(cw_device); // CW controller will be destroyed within device handle
+    ifx_mat_destroy_r(frame);  // explicitly destroy CW frame, otherwise a memory leak occurs
     return EXIT_SUCCESS;
 }

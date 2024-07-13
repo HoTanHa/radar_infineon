@@ -345,6 +345,10 @@ void ifx_rdm_run_rc(ifx_RDM_t *handle,
             printf("ifx_rdm_run_rc\t  ifx_Vector_C_t......  handle->doppler_fft_result......    after run ifx_ppfft_run_c\r\n");
             for (uint32_t ii = 0; ii < IFX_VEC_LEN(handle->doppler_fft_result); ii++)
             {
+                if (ii == IFX_VEC_LEN(handle->doppler_fft_result) / 2)
+                {
+                    printf("\r\n\n");
+                }
                 ifx_Complex_t value = IFX_VEC_AT(handle->doppler_fft_result, ii);
                 printf("(%10.6f %10.6f) ", value.data[0], value.data[1]);
             }
@@ -360,7 +364,7 @@ void ifx_rdm_run_rc(ifx_RDM_t *handle,
         }
         if (abc == 1 && i == 0)
         {
-            printf("ifx_rdm_run_rc\t ifx_Vector_C_t output_vec   output_len:%u\r\n", output_len);
+            printf("ifx_rdm_run_rc\t ifx_Vector_C_t output_vec   output_len:%u . data shift from N/2 \r\n", output_len);
             for (uint32_t ii = 0; ii < IFX_VEC_LEN(&output_vec); ii++)
             {
                 ifx_Complex_t value = IFX_VEC_AT(&output_vec, ii);
@@ -420,7 +424,7 @@ void ifx_rdm_run_r(ifx_RDM_t *handle,
         ifx_vec_abs2_c(&rdm_view, &output_vec);
         if (abc == 1 && i == 0)
         {
-            printf("ifx_rdm_run_r \t ifx_Vector_R_t output_vec  before scale\r\n");
+            printf("ifx_rdm_run_r \t ifx_Vector_R_t output_vec   ifx_vec_abs2_c vAt(output, i) = real * real + imag * imag; before scale\r\n");
             for (uint32_t ii = 0; ii < IFX_VEC_LEN(&output_vec); ii++)
             {
                 printf("%8.5fe-9 ", IFX_VEC_AT(&output_vec, ii) * 1000000000);

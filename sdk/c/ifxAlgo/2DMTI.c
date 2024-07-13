@@ -202,7 +202,7 @@ void ifx_2dmti_run_r(ifx_2DMTI_R_t *handle,
             const ifx_Float_t history_rc = mAt(history, r, c);
             mAt(output, r, c) = input_rc - history_rc;
             mAt(history, r, c) = alpha * input_rc + (1 - alpha) * history_rc;
-            if (r == 0 && abc == 1)
+            if ((r == 0 || r == 1) && abc == 1)
                 printf("%10.6f**%10.6f  ", input_rc, history_rc);
         }
         if (r == 0 && abc == 1)
