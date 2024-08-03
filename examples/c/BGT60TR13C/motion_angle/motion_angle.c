@@ -126,6 +126,35 @@ ifx_Error_t motion_angle_cleanup(motion_angle_t* ctx)
 ifx_Error_t motion_angle_process(motion_angle_t* ctx, ifx_Cube_R_t* frame)
 {
     ifx_motionangle_run(ctx->motion_angle_handle, frame, &ctx->result);
+
+    static int count = 0;
+    count++;
+    if (count == 1)
+    {
+        ifx_Vector_R_t samples = {0};
+        ifx_Matrix_R_t matrix;
+
+        printf("\n========== Frame: =========== IFX_CUBE_ROWS:%u COL:%u SLICE:%u\n", IFX_CUBE_ROWS(frame), IFX_CUBE_COLS(frame), IFX_CUBE_SLICES(frame));
+        for (uint32_t i = 0; i < IFX_CUBE_ROWS(frame); i++)
+        {
+            ifx_cube_get_row_r(frame, i, &matrix);
+
+            printf("\n========== Frame: ===========  matrix:r:%u-c:%u\n", IFX_MAT_ROWS(&matrix), IFX_MAT_COLS(&matrix));
+
+            for (uint32_t ant = 0; ant < IFX_MAT_ROWS(&matrix); ant++)
+            {
+                // Fetch samples for single antenna from the antenna matrix
+                ifx_mat_get_rowview_r(&matrix, ant, &samples);
+
+                printf("\n========== Rx Antenna: %u =========== IFX_VEC_LEN(&samples):%u\n", ant, IFX_VEC_LEN(&samples));
+                // for (uint32_t i = 0; i < IFX_VEC_LEN(&samples); i++)
+                // {
+                //     printf("%10.6f ", IFX_VEC_AT(&samples, i));
+                // }
+                // printf("\n");
+            }
+        }
+    }
     if (ctx->result.distance <= 0.0)
     {
         app_print("\", state=\"absence\"");

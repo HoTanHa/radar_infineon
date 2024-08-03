@@ -280,11 +280,14 @@ void ifx_fft_run_rc(ifx_FFT_t *handle, const ifx_Vector_R_t *input, ifx_Vector_C
     if (abc == 1)
     {
         printf("ifx_fft_run_rc    after fill negative haft   vLen(output)=%u, N=%u\r\n", vLen(output), N);
-        for (uint32_t ii = 0; ii < vLen(output); ii++)
+        if (vLen(output) >= N)
         {
-            printf("(%10.6f %10.6f) ", out[ii].data[0], out[ii].data[1]);
+            for (uint32_t ii = 0; ii < vLen(output); ii++)
+            {
+                printf("(%10.6f %10.6f) ", out[ii].data[0], out[ii].data[1]);
+            }
+            printf("\r\n\n");
         }
-        printf("\r\n\n");
     }
 
     if (copy_output)

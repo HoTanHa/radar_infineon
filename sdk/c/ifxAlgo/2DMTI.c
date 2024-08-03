@@ -202,10 +202,10 @@ void ifx_2dmti_run_r(ifx_2DMTI_R_t *handle,
             const ifx_Float_t history_rc = mAt(history, r, c);
             mAt(output, r, c) = input_rc - history_rc;
             mAt(history, r, c) = alpha * input_rc + (1 - alpha) * history_rc;
-            if ((r == 0 || r == 1) && abc == 1)
+            if ((r == 0 || r == 1) && (abc < 3))
                 printf("%10.6f**%10.6f  ", input_rc, history_rc);
         }
-        if (r == 0 && abc == 1)
+        if ((r == 0 || r == 1) && (abc < 3))
             printf("\r\n\n");
     }
 }
@@ -228,6 +228,13 @@ void ifx_2dmti_run_c(ifx_2DMTI_C_t *handle,
     const ifx_Float_t alpha = handle->alpha_MTI_filter;
     ifx_Matrix_C_t *history = handle->filter_history_c;
 
+    static int abc = 0;
+    abc++;
+    if (abc == 1)
+    {
+        printf("ifx_2dmti_run_c rows:%u  cols:%u  alpha:%10.6f\r\n", rows, cols, alpha);
+    }
+
     // output_n := input_n - history_n
     // history_n := alpha*input_n + (1-alpha)*history_{n-1}
     for (uint32_t r = 0; r < rows; r++)
@@ -240,7 +247,11 @@ void ifx_2dmti_run_c(ifx_2DMTI_C_t *handle,
             mAt(history, r, c) = ifx_complex_add(
                 ifx_complex_mul_real(input_rc, alpha),
                 ifx_complex_mul_real(history_rc, (1 - alpha)));
+            if ((r == 0) && (abc == 1))
+                printf("(%10.6f %10.6f) ", input_rc.data[0], input_rc.data[1]);
         }
+        if ((r == 0) && (abc == 1))
+            printf("\r\n\n");
     }
 }
 

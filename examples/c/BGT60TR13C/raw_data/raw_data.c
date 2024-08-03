@@ -66,9 +66,158 @@
 #include <math.h>
 #include <complex.h>
 
+#define PI_X ((float)(3.14159265358979323846))
 const double PI = 3.14159f;
 
 typedef double complex cplx;
+typedef struct
+{
+    float r;
+    float i;
+} complex_x;
+
+typedef struct
+{
+    uint32_t col_raw;
+    uint32_t row_raw;
+    float *data_raw;
+
+    float *window_blackman_harris;
+    float *window_chebyshev;
+
+} my_handle_s;
+
+static my_handle_s my_handle_data;
+static my_handle_s *pHandle = &my_handle_data;
+#if 0
+// static void real_to_complex(float in_r[], complex_x out_c[], uint32_t len)
+// {
+//     for (uint32_t i = 0; i < len; i++)
+//     {
+//         out_c[i].r = in_r[i];
+//         out_c[i].i = 0;
+//     }
+// }
+
+static void init_blackmanharris(float *win, uint32_t len)
+{
+    if (len == 1)
+    {
+        win[0] = 1;
+    }
+    else
+    {
+        const float a0 = (float)0.35875;
+        const float a1 = (float)0.48829;
+        const float a2 = (float)0.14128;
+        const float a3 = (float)0.01168;
+
+        const float scale = PI_X / (len - 1.0f);
+
+        for (uint32_t i = 0; i < len; ++i)
+        {
+            const float phi = scale * (float)i;
+            win[i] = a0 + a2 * cosf(4 * phi) - a1 * cosf(2 * phi) - a3 * cosf(6 * phi);
+        }
+    }
+}
+
+static float acos1mx(float x)
+{
+    if (x < (float)0.01)
+    {
+        /* Use Taylor series of acos(1-x) for x=~0. The maximum relative error
+         * for double is ~7e-14 at x=0.01.
+         */
+        const float x2 = x * x;   // x^2
+        const float x3 = x * x2;  // x^3
+        const float x4 = x2 * x2; // x^4
+        return sqrtf(2 * x) * (1 + x / 12 + 3 * x2 / 160 + 5 * x3 / 896 + 35 * x4 / 18432);
+    }
+    else
+        return acosf(1 - x);
+}
+
+//----------------------------------------------------------------------------
+
+static float acosh1px(float x)
+{
+    return log1pf(x + sqrtf(x * (x + 2)));
+}
+
+//----------------------------------------------------------------------------
+
+static float cosm1(float x)
+{
+    float s = sinf(x / 2);
+    return -2 * s * s;
+}
+
+//----------------------------------------------------------------------------
+
+static float coshm1(float x)
+{
+    float s = sinhf(x / 2);
+    return 2 * s * s;
+}
+
+//----------------------------------------------------------------------------
+
+static float chebyxp1(int n, float x)
+{
+    if (x < 0 && x >= -2)
+        return cosf(n * acos1mx(-x));
+    else
+        return coshf(n * acosh1px(x));
+}
+
+static void init_chebyshev(float *win, uint32_t len, float at_dB)
+{
+    const uint32_t N = len;
+
+    if (N == 1)
+    {
+        win[0] = 1.0f;
+        return;
+    }
+    const float pssbnd_ripple = powf(10, at_dB / 20);
+    const float x0m1 = coshm1(acoshf(pssbnd_ripple) / (N - 1));
+
+    float max_val = 0;
+    for (uint32_t j = 0; j < N / 2 + 1; j++)
+    {
+        const float n = j + (float)0.5;
+
+        // inside the loop: sign = (-1)^i
+        int sign = -1;
+
+        float sum = 0;
+        for (uint32_t i = 1; i < (N - 1) / 2 + 1; i++)
+        {
+            // cm1 = cos(i*pi/N)-1
+            float cm1 = cosm1(i * IFX_PI / N);
+
+            // arg = x0*cos(i*pi/N) - 1
+            float arg = cm1 + x0m1 * (1 + cm1);
+            sum += sign * chebyxp1(N - 1, arg) * COS((2 * IFX_PI * n * i) / N);
+            sign = -sign;
+        }
+
+        // here a loss of significance occurs
+        float value = pssbnd_ripple + 2 * sum;
+        if (value > max_val)
+            max_val = value;
+
+        win[j] = win[N - j - 1] = value;
+    }
+
+    // ifx_vec_scale_r(win, 1 / max_val, win);
+    float scale = 1 / max_val;
+    for (uint32_t i = 0; i < N; ++i)
+    {
+        win[i] = win[i] * scale;
+    }
+}
 
 void _fft(cplx buf[], cplx out[], int n, int step)
 {
@@ -138,6 +287,76 @@ void print_calculate(cplx buf[], int n)
 
     // printf("\n\n");
 }
+
+float my_sum_r(float *data, uint32_t len)
+{
+    float sum = 0;
+    for (uint32_t c = 0; c < len; c++)
+    {
+        sum += data[c];
+    }
+    return sum;
+}
+
+static void my_sub_r(float *data_in, uint32_t len, float *data_out)
+{
+    float sum = my_sum_r(data_in, len);
+    float mean = sum / len;
+    for (uint32_t c = 0; c < len; c++)
+    {
+        data_out[c] = data_in[c] - mean;
+    }
+}
+
+static void my_mul_r(float *data_in, uint32_t len, float *window, float *data_out)
+{
+    for (uint32_t c = 0; c < len; c++)
+    {
+        data_out[c] = data_in[c] * window[c];
+    }
+}
+
+static void my_fill_zero_r(float *data_in, uint32_t len_in, float *data_out, uint32_t len_out)
+{
+    for (uint32_t c = 0; c < len_in; c++)
+    {
+        data_out[c] = data_in[c];
+    }
+    for (uint32_t c = len_in; c < len_out; c++)
+    {
+        data_out[c] = 0;
+    }
+}
+
+static void my_process_antenna_data(const ifx_Matrix_R_t *antenna_data)
+{
+    uint32_t row_raw = IFX_MAT_ROWS(antenna_data);
+    uint32_t col_raw = IFX_MAT_COLS(antenna_data);
+
+    /* get raw data */
+    for (uint32_t r = 0; r < IFX_MAT_ROWS(antenna_data); r++)
+    {
+        for (uint32_t c = 0; c < IFX_MAT_COLS(antenna_data); c++)
+        {
+            ifx_Float_t value = IFX_MAT_AT(antenna_data, r, c);
+            pHandle->data_raw[r * col_raw + c] = value;
+        }
+    }
+    /* sub  -> mul -> fft fill zero -> fft*/
+    float *buf_zero_pad = (float *)malloc(col_raw * 4);
+    for (uint32_t r = 0; r < row_raw; r++)
+    {
+        float *data_sub = pHandle->data_raw + (r * col_raw);
+        my_sub_r(data_sub, col_raw, data_sub);
+
+        my_mul_r(data_sub, col_raw, pHandle->window_blackman_harris, data_sub);
+
+        my_fill_zero_r(data_sub, col_raw, buf_zero_pad, col_raw * 4);
+    }
+    free(buf_zero_pad);
+}
+#endif
+
 /**
  * @brief Helper function to process data
  *
@@ -266,12 +485,12 @@ static void process_antenna_data(const ifx_Matrix_R_t *antenna_data)
         // Xfft[4 * i + 2] = IFX_VEC_AT(sum, i);
         // Xfft[4 * i + 3] = IFX_VEC_AT(sum, i);
     }
-    // show("Data: \n", (cplx *)Xfft, sizefft);
-    fft((cplx *)Xfft, sizefft);
+    // // show("Data: \n", (cplx *)Xfft, sizefft);
     // fft((cplx *)Xfft, sizefft);
-    // show("FFT : \n", (cplx *)Xfft, sizefft);
+    // // fft((cplx *)Xfft, sizefft);
+    // // show("FFT : \n", (cplx *)Xfft, sizefft);
 
-    print_calculate(Xfft, sizefft);
+    // print_calculate(Xfft, sizefft);
     free(Xfft);
 
     printf("\n\n");
@@ -436,6 +655,17 @@ int main(int argc, char **argv)
 
     printf("\r\n\r\n");
     sleep(5);
+
+    pHandle->col_raw = device_config.num_samples_per_chirp;
+    pHandle->row_raw = device_config.num_chirps_per_frame;
+    pHandle->data_raw = (float *)malloc(pHandle->col_raw * pHandle->row_raw * sizeof(float));
+
+    pHandle->window_blackman_harris = (float *)malloc(device_config.num_samples_per_chirp * sizeof(float));
+    pHandle->window_chebyshev = (float *)malloc(device_config.num_chirps_per_frame * sizeof(float));
+
+    // init_blackmanharris(pHandle->window_blackman_harris, device_config.num_samples_per_chirp);
+    // init_chebyshev(pHandle->window_chebyshev, device_config.num_chirps_per_frame, 100);
+
     /* Fetch NUM_FETCHED_FRAMES number of frames. */
     for (int frame_number = 0; frame_number < NUM_FETCHED_FRAMES; frame_number++)
     {
@@ -457,6 +687,10 @@ int main(int argc, char **argv)
         process_frame(frame);
         usleep(1000);
     }
+
+    free(pHandle->data_raw);
+    free(pHandle->window_blackman_harris);
+    free(pHandle->window_chebyshev);
 
 out:
     /* Close the device after processing all frames. It is valid to pass NULL

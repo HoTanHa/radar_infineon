@@ -74,6 +74,9 @@ typedef struct
     ifx_2DMTI_R_t *mti_handle;
     ifx_Math_Axis_Spec_t range_spec;
     ifx_Math_Axis_Spec_t speed_spec;
+
+    ifx_OSCFAR_t *oscfar_handle;
+    ifx_DBSCAN_t *dbscan_handle;
 } rdm_t;
 
 /*
@@ -155,6 +158,19 @@ ifx_Error_t rdm_config(rdm_t *rdm_context, ifx_Avian_Device_t *device, ifx_json_
         .range_fft_config = range_fft_config,
         .doppler_fft_config = doppler_fft_config};
 
+    ifx_OSCFAR_Config_t oscfar_config = (ifx_OSCFAR_Config_t){
+        .win_rank = 4,
+        .guard_band = 2,
+        .sample = 8,
+        .pfa = 0.01,
+        .coarse_scalar = 0.7};
+
+    ifx_DBSCAN_Config_t dbscan_config = (ifx_DBSCAN_Config_t){
+        .min_points = 2,
+        .min_dist = 2.0f,
+        .max_num_detections = 3,
+    };
+
     rdm_context->rdm_handle = ifx_rdm_create(&rdm_config);
     if ((ret = ifx_error_get()))
     {
@@ -166,6 +182,10 @@ ifx_Error_t rdm_config(rdm_t *rdm_context, ifx_Avian_Device_t *device, ifx_json_
     {
         return ret;
     }
+
+    rdm_context->oscfar_handle = ifx_oscfar_create(&oscfar_config);
+
+    rdm_context->dbscan_handle = ifx_dbscan_create(&dbscan_config);
 
     printf("range_fft_size:%u   doppler_fft_size:%u\r\n", range_fft_size, doppler_fft_size);
 
@@ -224,6 +244,8 @@ ifx_Error_t rdm_config(rdm_t *rdm_context, ifx_Avian_Device_t *device, ifx_json_
  */
 ifx_Error_t rdm_cleanup(rdm_t *rdm_context)
 {
+    ifx_dbscan_destroy(rdm_context->dbscan_handle);
+    ifx_oscfar_destroy(rdm_context->oscfar_handle);
     ifx_rdm_destroy(rdm_context->rdm_handle);
     ifx_mat_destroy_r(rdm_context->rdm);
     ifx_2dmti_destroy_r(rdm_context->mti_handle);
@@ -289,7 +311,7 @@ ifx_Error_t rdm_process(rdm_t *rdm_context, ifx_Cube_R_t *frame)
 
     ifx_Error_t ret = 0;
     ifx_Matrix_R_t antenna_data;
-    ifx_cube_get_row_r(frame, 0, &antenna_data);
+    ifx_cube_get_row_r(frame, 1, &antenna_data);
 
     // for (uint32_t col = 0; col < IFX_MAT_COLS(&antenna_data); col++)
     // {
@@ -344,6 +366,34 @@ ifx_Error_t rdm_process(rdm_t *rdm_context, ifx_Cube_R_t *frame)
     uint32_t rmax;
     uint32_t cmax;
     rdm_peak_search(rdm_context->rdm, &rmax, &cmax);
+
+    if (abc == 1)
+    {
+        ifx_Matrix_R_t *oscfar_matrix = ifx_mat_create_r(IFX_MAT_ROWS(rdm_context->rdm), IFX_MAT_COLS(rdm_context->rdm));
+        ifx_oscfar_run(rdm_context->oscfar_handle, rdm_context->rdm, oscfar_matrix);
+        for (uint32_t col = 0; col < IFX_MAT_COLS(rdm_context->rdm); col++)
+        {
+            ifx_Float_t value = IFX_MAT_AT(rdm_context->rdm, rmax, col);
+            printf("%10.6f  ", value);
+        }
+        printf("\r\n\n");
+        printf("row max \r\n");
+        for (uint32_t col = 0; col < IFX_MAT_COLS(oscfar_matrix); col++)
+        {
+            ifx_Float_t value = IFX_MAT_AT(oscfar_matrix, rmax, col);
+            printf("%10.6f  ", value);
+        }
+        printf("\r\n\n");
+        printf("col max \r\n");
+        for (uint32_t row = 0; row < IFX_MAT_ROWS(oscfar_matrix); row++)
+        {
+            ifx_Float_t value = IFX_MAT_AT(oscfar_matrix, row, cmax);
+            printf("%10.6f  ", value);
+        }
+        printf("\r\n\n");
+        ifx_mat_destroy_r(oscfar_matrix);
+    }
+
     // range
     const ifx_Float_t range = rmax * rdm_context->range_spec.value_bin_per_step;
     // speed

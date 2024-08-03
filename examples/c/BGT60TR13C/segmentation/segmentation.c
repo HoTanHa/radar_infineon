@@ -119,7 +119,7 @@ static ifx_Cube_R_t frame_view(const ifx_Cube_R_t *frame, ifx_Orientation_t orie
  * @param segments          information about segments in a vector
  * @param tracks            information about tracks in a matrix
  */
-static void process_segmentation_result(ifx_Vector_R_t *segments, ifx_Matrix_R_t *tracks)
+static void process_segmentation_result(ifx_Vector_R_t *segments, ifx_Matrix_R_t *tracks, ifx_Cube_R_t *debug)
 {
     IFX_ERR_BRK_NULL(segments);
     IFX_ERR_BRK_NULL(tracks);
@@ -147,6 +147,35 @@ static void process_segmentation_result(ifx_Vector_R_t *segments, ifx_Matrix_R_t
         }
     }
     app_print("]");
+
+    static int count = 0;
+    count++;
+    if (count == 1)
+    {
+        ifx_Vector_R_t samples = {0};
+        ifx_Matrix_R_t matrix;
+
+        printf("\n========== Frame: =========== IFX_CUBE_ROWS:%u COL:%u SLICE:%u\n", IFX_CUBE_ROWS(debug), IFX_CUBE_COLS(debug), IFX_CUBE_SLICES(debug));
+        for (uint32_t i = 0; i < IFX_CUBE_ROWS(debug); i++)
+        {
+            ifx_cube_get_row_r(debug, i, &matrix);
+
+            printf("\n========== Frame: ===========  matrix:r:%u-c:%u\n", IFX_MAT_ROWS(&matrix), IFX_MAT_COLS(&matrix));
+
+            for (uint32_t ant = 0; ant < IFX_MAT_ROWS(&matrix); ant++)
+            {
+                // Fetch samples for single antenna from the antenna matrix
+                ifx_mat_get_rowview_r(&matrix, ant, &samples);
+
+                printf("\n========== Rx Antenna: %u =========== IFX_VEC_LEN(&samples):%u\n", ant, IFX_VEC_LEN(&samples));
+                // for (uint32_t i = 0; i < IFX_VEC_LEN(&samples); i++)
+                // {
+                //     printf("%10.6f ", IFX_VEC_AT(&samples, i));
+                // }
+                // printf("\n");
+            }
+        }
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -286,28 +315,28 @@ ifx_Error_t segmentation_process(segmentation_t *ctx, ifx_Cube_R_t *frame)
     const ifx_Cube_R_t view = frame_view(frame, ctx->segmentation_config.orientation);
 
     ifx_segmentation_run(ctx->segmentation_handle, &view, ctx->segments, ctx->tracks);
-    process_segmentation_result(ctx->segments, ctx->tracks);
+    process_segmentation_result(ctx->segments, ctx->tracks, frame);
 
-    static int count = 0;
-    count++;
-    if (count == 1)
-    {
-        ifx_Vector_R_t samples = {0};
-        printf("\n========== Frame: =========== IFX_MAT_ROWS(frame):%u\n", IFX_MAT_ROWS(frame));
+    // static int count = 0;
+    // count++;
+    // if (count == 1)
+    // {
+    //     ifx_Vector_R_t samples = {0};
+    //     printf("\n========== Frame: =========== IFX_MAT_ROWS(frame):%u\n", IFX_MAT_ROWS(frame));
 
-        for (uint32_t ant = 0; ant < IFX_MAT_ROWS(&view); ant++)
-        {
-            // Fetch samples for single antenna from the antenna matrix
-            ifx_mat_get_rowview_r(frame, ant, &samples);
+    //     for (uint32_t ant = 0; ant < IFX_MAT_ROWS(&view); ant++)
+    //     {
+    //         // Fetch samples for single antenna from the antenna matrix
+    //         ifx_mat_get_rowview_r(frame, ant, &samples);
 
-            printf("\n========== Rx Antenna: %d =========== IFX_VEC_LEN(&samples):%u\n", ant, IFX_VEC_LEN(&samples));
-            for (uint32_t i = 0; i < IFX_VEC_LEN(&samples); i++)
-            {
-                printf("%10.6f ", IFX_VEC_AT(&samples, i));
-            }
-            printf("\n");
-        }
-    }
+    //         printf("\n========== Rx Antenna: %d =========== IFX_VEC_LEN(&samples):%u\n", ant, IFX_VEC_LEN(&samples));
+    //         for (uint32_t i = 0; i < IFX_VEC_LEN(&samples); i++)
+    //         {
+    //             printf("%10.6f ", IFX_VEC_AT(&samples, i));
+    //         }
+    //         printf("\n");
+    //     }
+    // }
     return ifx_error_get();
 }
 
@@ -325,7 +354,7 @@ int main(int argc, char *argv[])
 
     // get default device configuration
     {
-        ifx_Segmentation_t* seg = ifx_segmentation_create_from_mode(IFX_SEGMENTATION_1GHZ_LANDSCAPE, &device_config);
+        ifx_Segmentation_t *seg = ifx_segmentation_create_from_mode(IFX_SEGMENTATION_500MHZ_LANDSCAPE, &device_config);
         ifx_segmentation_destroy(seg);
     }
 

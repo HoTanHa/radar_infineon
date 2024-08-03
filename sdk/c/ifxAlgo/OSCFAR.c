@@ -156,6 +156,8 @@ ifx_OSCFAR_t* ifx_oscfar_create(const ifx_OSCFAR_Config_t* config)
     IFX_ERR_HANDLE_N(h->tmp_ref_vec = ifx_vec_create_r(ref_mat_size * ref_mat_size),
                      ifx_oscfar_destroy(h));
 
+    printf("ifx_oscfar_create  oscfar handle: ref_mat_size=%u    osarray_size=%u\r\n", ref_mat_size, osarray_size);
+
     return h;
 }
 
@@ -173,6 +175,8 @@ void ifx_oscfar_run(const ifx_OSCFAR_t* handle,
 
     ifx_Float_t input_mean = ifx_mat_mean_r(feature2D);
     ifx_Float_t coarse_threshold = handle->coarse_scalar * input_mean;
+
+    printf("ifx_oscfar_run: input_mean:%10.6f    coarse_threshold: %10.6f\r\n", input_mean, coarse_threshold);
 
     for (uint32_t col = handle->ref_win_len + 1; col < mCols(feature2D) - handle->ref_win_len - 1; ++col)
     {

@@ -1,0 +1,2 @@
+add_executable(app_radar app_radar.c)
+target_link_libraries(app_radar sdk_avian BGT60TR13C_common)
